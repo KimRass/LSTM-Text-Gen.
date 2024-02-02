@@ -4,14 +4,12 @@
 import torch
 import torch.nn.functional as F
 from transformers import AutoTokenizer
-from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 import argparse
 import os
-import pandas as pd
 
 from utils import get_device, set_seed
-from data import EpicuriousLDM, EpicuriousDS
+from data import EpicuriousLDM
 from model import LSTMLM
 
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
@@ -45,7 +43,6 @@ class TextGenerator(object):
         self.max_len = max_len
         self.device = device
 
-        # self.model = LSTM(vocab_size=self.tokenizer.vocab_size)
         self.model = LSTMLM.load_from_checkpoint(
             model_params_path, vocab_size=tokenizer.vocab_size, map_location=device,
         )
@@ -96,27 +93,22 @@ def main():
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens({"pad_token": "[PAD]"})
 
-    max_len = 200
-    json_path = "/Users/jongbeomkim/Documents/datasets/archive/full_format_recipes.json"
     dm = EpicuriousLDM(
-        # json_path=args.JSON_PATH,
-        json_path=json_path,
+        json_path=args.JSON_PATH,
         tokenizer=tokenizer,
-        # max_len=args.MAX_LEN,
-        max_len=max_len,
-        # batch_size=args.BATCH_SIZE,
-        batch_size=32,
-        # n_cpus=args.N_CPUS,
-        n_cpus=1,
-        # seed=args.SEED,
-        seed=888,
+        max_len=args.MAX_LEN,
+        batch_size=args.BATCH_SIZE,
+        n_cpus=args.N_CPUS,
+        seed=args.SEED,
     )
     dm.setup()
     test_prefs = dm.test_prefs
 
-    model_params_path = "/Users/jongbeomkim/Documents/datasets/lstm/lstm-epicurious-epoch=29-val_loss=2.2752.ckpt"
+    # model_params_path = "/Users/jongbeomkim/Documents/datasets/lstm/lstm-epicurious-epoch=29-val_loss=2.2752.ckpt"
     text_gen = TextGenerator(
-        model_params_path=model_params_path, tokenizer=tokenizer, max_len=max_len,
+        model_params_path=args.MODEL_PARAMS_PATH,
+        tokenizer=tokenizer,
+        max_len=args.MAX_LEN,
         device=DEVICE,
     )
 
@@ -124,6 +116,8 @@ def main():
     for prompt in tqdm(test_prefs, leave=False):
         gen_text = text_gen.generate(prompt)
         gen_texts.append(gen_text)
-        break
-    df_gen_texts = pd.DataFrame(gen_texts)
-    df_gen_texts.to_csv("/Users/jongbeomkim/Documents/datasets/lstm/gen_texts.csv", index=False, header=False)
+        # break
+
+    with open("/Users/jongbeomkim/Documents/datasets/lstm/gen_texts.txt", mode="w") as f:
+        for row in gen_texts:
+            f.write(row + "\n\n\n")

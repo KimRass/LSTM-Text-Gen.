@@ -61,7 +61,7 @@ class EpicuriousLDM(pl.LightningDataModule):
         for sample in data:
             if "title" in sample and "directions" in sample:
                 if sample["directions"]:
-                    prefs.append(f"""The recipe for "{sample["title"].strip()}":\n\n""")
+                    prefs.append(f"""The recipe for "{sample["title"].strip()}":\n""")
                     direcs.append(" " + f"\n ".join(sample["directions"]))
 
         (

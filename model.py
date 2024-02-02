@@ -32,20 +32,25 @@ class LSTMLM(pl.LightningModule):
         x = self.proj(x)
         return x
 
+    def get_loss(self, in_token_id, out_token_id):
+        b, l = in_token_id.shape
+        pred_token_id = self(in_token_id)
+        loss = F.cross_entropy(pred_token_id.view(b * l, -1), out_token_id.view(b * l))
+        return loss
+
     def configure_optimizers(self):
         optim = AdamW(self.parameters(), lr=self.lr)
         return [optim]
 
     def training_step(self, batch, batch_idx):
         in_token_id, out_token_id = batch
-        b, l = in_token_id.shape
-        pred_token_id = self(in_token_id)
-        loss = F.cross_entropy(pred_token_id.view(b * l, -1), out_token_id.view(b * l))
+        loss = self.get_loss(in_token_id=in_token_id, out_token_id=out_token_id)
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        loss = self.training_step(batch=batch, batch_idx=batch_idx)
+        in_token_id, out_token_id = batch
+        loss = self.get_loss(in_token_id=in_token_id, out_token_id=out_token_id)
         self.log("val_loss", loss)
         self.val_losses.append(loss)
         return {"val_loss": loss}
