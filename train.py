@@ -9,14 +9,15 @@ from data import EpicuriousLDM
 from model import LSTMLM
 
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 
 def get_args(to_upperse=True):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--json_path", type=str, required=True)
-    parser.add_argument("--n_cpus", type=int, required=True)
     parser.add_argument("--save_dir", type=str, required=True)
+    parser.add_argument("--n_cpus", type=int, required=True)
 
     parser.add_argument("--seed", type=int, default=888, required=False)
     parser.add_argument("--n_epochs", type=int, default=50, required=False)
