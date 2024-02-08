@@ -18,12 +18,13 @@ def get_args(to_upperse=True):
     parser.add_argument("--json_path", type=str, required=True)
     parser.add_argument("--save_dir", type=str, required=True)
     parser.add_argument("--n_cpus", type=int, required=True)
+    parser.add_argument("--resume_from", type=str, required=False)
 
     parser.add_argument("--seed", type=int, default=888, required=False)
     parser.add_argument("--n_epochs", type=int, default=50, required=False)
     parser.add_argument("--batch_size", type=int, default=32, required=False)
     parser.add_argument("--max_len", type=int, default=200, required=False)
-    parser.add_argument("--lr", type=float, default=0.0001, required=False)
+    parser.add_argument("--lr", type=float, default=0.0002, required=False)
 
     args = parser.parse_args()
 
@@ -59,16 +60,19 @@ def main():
 
     ckpt_callback = ModelCheckpoint(
         dirpath=args.SAVE_DIR,
-        filename="lstm-epicurious-{epoch:02d}-{train_loss:.4f}-{val_loss:.4f}",
+        filename="lstm-epicurious-{epoch:02d}-{train_loss:.3f}-{val_loss:.3f}",
         monitor="val_loss",
         save_top_k=2,
         mode="min",
-        save_weights_only=True,
+        save_weights_only=False,
     )
     trainer = pl.Trainer(
         max_epochs=args.N_EPOCHS, callbacks=[ckpt_callback],
     )
-    trainer.fit(model, dm)
+    if args.RESUME_FROM:
+        trainer.fit(model, dm, ckpt_path=args.RESUME_FROM)
+    else:
+        trainer.fit(model, dm)
 
 
 if __name__ == "__main__":

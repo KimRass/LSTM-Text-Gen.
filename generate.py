@@ -21,6 +21,7 @@ def get_args(to_upperse=True):
     parser.add_argument("--json_path", type=str, required=True)
     parser.add_argument("--model_params_path", type=str, required=True)
     parser.add_argument("--save_dir", type=str, required=True)
+    parser.add_argument("--n_cpus", type=int, required=True)
 
     parser.add_argument("--seed", type=int, default=888, required=False)
     parser.add_argument("--batch_size", type=int, default=32, required=False)
@@ -113,7 +114,7 @@ def main():
     )
 
     gen_texts = list()
-    for prompt in tqdm(test_prefs, leave=False):
+    for prompt in tqdm(test_prefs[: 100], leave=False):
         gen_text = text_gen.generate(prompt)
         gen_texts.append(gen_text)
         # break
@@ -121,3 +122,7 @@ def main():
     with open("/Users/jongbeomkim/Documents/datasets/lstm/gen_texts.txt", mode="w") as f:
         for row in gen_texts:
             f.write(row + "\n\n\n")
+
+
+if __name__ == "__main__":
+    main()
