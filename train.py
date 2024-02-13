@@ -42,6 +42,7 @@ def main():
     set_seed(args.SEED)
 
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
+    tokenizer.vocab_size
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens({"pad_token": "[PAD]"})
 
@@ -62,13 +63,11 @@ def main():
         dirpath=args.SAVE_DIR,
         filename="lstm-epicurious-{epoch:02d}-{train_loss:.3f}-{val_loss:.3f}",
         monitor="val_loss",
-        save_top_k=2,
+        save_top_k=1,
         mode="min",
         save_weights_only=False,
     )
-    trainer = pl.Trainer(
-        max_epochs=args.N_EPOCHS, callbacks=[ckpt_callback],
-    )
+    trainer = pl.Trainer(max_epochs=args.N_EPOCHS, callbacks=[ckpt_callback])
     if args.RESUME_FROM:
         trainer.fit(model, dm, ckpt_path=args.RESUME_FROM)
     else:

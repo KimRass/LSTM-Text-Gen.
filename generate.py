@@ -7,6 +7,7 @@ from transformers import AutoTokenizer
 from tqdm import tqdm
 import argparse
 import os
+import random
 
 from utils import get_device, set_seed
 from data import EpicuriousLDM
@@ -19,12 +20,12 @@ def get_args(to_upperse=True):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--json_path", type=str, required=True)
-    parser.add_argument("--model_params_path", type=str, required=True)
-    parser.add_argument("--save_dir", type=str, required=True)
+    parser.add_argument("--model_params", type=str, required=True)
+    parser.add_argument("--n_samples", type=int, required=True)
     parser.add_argument("--n_cpus", type=int, required=True)
+    parser.add_argument("--save_path", type=str, required=True)
 
     parser.add_argument("--seed", type=int, default=888, required=False)
-    parser.add_argument("--batch_size", type=int, default=32, required=False)
     parser.add_argument("--max_len", type=int, default=200, required=False)
 
     args = parser.parse_args()
@@ -39,13 +40,13 @@ def get_args(to_upperse=True):
 
 
 class TextGenerator(object):
-    def __init__(self, model_params_path, tokenizer, max_len, device):
+    def __init__(self, model_params, tokenizer, max_len, device):
         self.tokenizer = tokenizer
         self.max_len = max_len
         self.device = device
 
         self.model = LSTMLM.load_from_checkpoint(
-            model_params_path, vocab_size=tokenizer.vocab_size, map_location=device,
+            model_params, vocab_size=tokenizer.vocab_size, map_location=device,
         )
 
         self.pad_id_tensor = torch.as_tensor([self.tokenizer.pad_token_id]).to(self.device)
@@ -98,28 +99,28 @@ def main():
         json_path=args.JSON_PATH,
         tokenizer=tokenizer,
         max_len=args.MAX_LEN,
-        batch_size=args.BATCH_SIZE,
+        batch_size=1,
         n_cpus=args.N_CPUS,
         seed=args.SEED,
     )
     dm.setup()
-    test_prefs = dm.test_prefs
 
-    # model_params_path = "/Users/jongbeomkim/Documents/datasets/lstm/lstm-epicurious-epoch=29-val_loss=2.2752.ckpt"
     text_gen = TextGenerator(
-        model_params_path=args.MODEL_PARAMS_PATH,
+        model_params=args.MODEL_PARAMS,
         tokenizer=tokenizer,
         max_len=args.MAX_LEN,
         device=DEVICE,
     )
 
+    test_prefs = dm.test_prefs[: args.N_SAMPLES]
+    random.shuffle(test_prefs)
     gen_texts = list()
-    for prompt in tqdm(test_prefs[: 100], leave=False):
+    for prompt in tqdm(test_prefs, leave=False):
         gen_text = text_gen.generate(prompt)
         gen_texts.append(gen_text)
         # break
 
-    with open("/Users/jongbeomkim/Documents/datasets/lstm/gen_texts.txt", mode="w") as f:
+    with open(args.SAVE_PATH, mode="w") as f:
         for row in gen_texts:
             f.write(row + "\n\n\n")
 
